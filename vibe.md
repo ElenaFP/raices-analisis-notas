@@ -22,9 +22,9 @@
     - **Evaluación Final Inteligente:** Selección automática entre `NOTAORD` y `EVFINAL(LOMLOE)`.
 3.  **Interfaz de Usuario (UX/UI):**
     - **Diseño Unificado:** Estilo visual (colores, fuentes, sombras) sincronizado con `raices-analisis-asistencia`.
+    - **Navegación:** Añadido banner superior para saltar entre las aplicaciones de Asistencia y Notas, con enlace directo a la sección de ayuda del README.
     - **Pestañas:** Organización de resultados por evaluaciones (1ª, 2ª, Final y Extraordinaria).
-    - **Persistencia:** La zona de carga (Drag & Drop) permanece visible para facilitar el análisis de múltiples archivos.
-    - **Agrupación de Unidades:** Interfaz mejorada para renombrar y combinar grupos (ej. unir letras en un solo nivel).
+    - **Normalización de Títulos:** Sincronizados los títulos principales con los del banner para mayor coherencia visual.
 4.  **Exportación de Datos:**
     - Botones de descarga CSV en cada tabla de resultados.
     - Generación dinámica de nombres de archivo incluyendo el año académico.
