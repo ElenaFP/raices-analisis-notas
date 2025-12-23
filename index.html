@@ -3,213 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis de Notas - 1ª Evaluación</title>
+    <title>Análisis de Notas por Grupo</title>
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --bg-color: #f8fafc;
-            --text-color: #1e293b;
-            --border-color: #e2e8f0;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 2rem;
-            line-height: 1.5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
         }
 
         h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
             text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 2rem;
         }
 
-        /* Drag and Drop Zone */
-        #drop-zone {
-            border: 3px dashed var(--border-color);
-            border-radius: 1rem;
-            padding: 3rem;
+        .subtitle {
             text-align: center;
-            background-color: white;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
             transition: all 0.3s ease;
-            cursor: pointer;
-            margin-bottom: 2rem;
         }
 
-        #drop-zone.dragover {
-            border-color: var(--primary-color);
-            background-color: #eff6ff;
-            transform: scale(1.01);
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f1f5;
         }
 
-        #drop-zone p {
-            margin: 0;
-            font-size: 1.2rem;
-            color: #64748b;
+        .upload-section.dragover {
+            border-color: #38ef7d;
+            background: #e8f5e9;
+            transform: scale(1.02);
         }
 
-        #file-input {
+        .upload-section input[type="file"] {
             display: none;
         }
 
-        /* Button */
-        .btn {
-            background-color: var(--primary-color);
+        .upload-label {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
-            margin-top: 1rem;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-info {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        /* Buttons (General) */
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
         }
 
         .btn:hover {
-            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow: none;
         }
 
-        /* Grouping UI */
+        /* Grouping Section */
         #grouping-container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            background: #fff;
+            padding: 0; /* Container padding handles it */
+            margin-bottom: 30px;
             display: none;
         }
 
         .group-controls {
             display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background-color: #f1f5f9;
-            border-radius: 0.5rem;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 12px;
             align-items: center;
         }
 
+        .group-controls input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .group-controls input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         .group-list {
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 20px;
         }
 
         .group-item {
             display: flex;
             align-items: center;
-            padding: 0.5rem 1rem;
-            border-bottom: 1px solid var(--border-color);
-            gap: 1rem;
-            cursor: grab; /* Indicates draggable */
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 15px;
+            cursor: grab;
             transition: all 0.2s ease;
-        }
-
-        .group-item.dragging {
-            opacity: 0.5;
-            background-color: #f1f5f9;
-        }
-
-        .group-item.drag-over {
-            background-color: #e0f2fe; /* Light blue highlight */
-            border: 2px dashed var(--primary-color);
-            transform: scale(1.02);
-        }
-
-        .group-item:last-child {
-            border-bottom: none;
+            background: white;
         }
 
         .group-item:hover {
             background-color: #f8fafc;
         }
 
+        .group-item.dragging {
+            opacity: 0.5;
+            background-color: #e2e8f0;
+        }
+
+        .group-item.drag-over {
+            background-color: #e0f2fe;
+            border: 2px dashed #667eea;
+        }
+
         .original-name {
             flex: 1;
-            font-family: monospace;
-            color: #64748b;
+            font-family: 'Segoe UI', sans-serif;
+            color: #475569;
+            font-weight: 500;
         }
 
         .arrow-icon {
             color: #94a3b8;
         }
 
-        /* Results Table */
-        .table-container {
-            overflow-x: auto;
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: none; /* Hidden by default */
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        th, td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            background-color: #f1f5f9;
-            font-weight: 600;
-            color: #475569;
-        }
-
-        tr:hover {
+        .mapped-name-input {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
             background-color: #f8fafc;
+            color: #475569;
+            width: 250px;
+            pointer-events: none;
+            font-weight: 600;
         }
 
-        /* Stat highlights */
-        .good { color: #16a34a; font-weight: bold; }
-        .bad { color: #dc2626; }
-        .warning { color: #d97706; }
+        /* Results Section */
+        #results {
+            display: none;
+        }
 
-        /* Tab Navigation */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        /* Tabs */
         .tabs {
             display: flex;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 2rem;
-            gap: 0.5rem;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
-            padding: 0.75rem 1.5rem;
+            padding: 12px 24px;
             border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 1rem;
+            background: #f1f5f9;
             color: #64748b;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
             font-weight: 600;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
         }
 
         .tab-btn:hover {
-            color: var(--primary-color);
-            background-color: #eff6ff;
+            background: #e2e8f0;
+            color: #333;
         }
 
         .tab-btn.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e9ecef;
+            color: #333;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Status Colors */
+        .good { color: #10b981; font-weight: bold; }
+        .bad { color: #ef4444; font-weight: bold; }
+        .warning { color: #f59e0b; font-weight: bold; }
+
+        /* Loading & Error */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .eval-section {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.4s ease;
         }
 
         .eval-section.active {
@@ -217,130 +326,150 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.8em; }
+            .results-header { flex-direction: column; gap: 15px; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .group-item { flex-direction: column; align-items: stretch; }
+            .mapped-name-input { width: 100%; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>📊 Análisis de Resultados por Grupo</h1>
+    <div class="container">
+        <h1>📊 Análisis de Resultados</h1>
+        <p class="subtitle" id="subtitle">Arrastra tu fichero CSV para analizar las notas por grupo</p>
 
-    <div id="drop-zone">
-        <p>📂 Arrastra tu fichero CSV aquí o haz clic para seleccionar</p>
-        <button class="btn" onclick="document.getElementById('file-input').click()">Seleccionar Fichero</button>
-        <input type="file" id="file-input" accept=".csv">
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <input type="file" id="csvFile" accept=".csv,.CSV" />
+            <label for="csvFile" class="upload-label">
+                📁 Seleccionar archivo CSV
+            </label>
+            <div class="file-info" id="fileInfo">
+                o arrastra el archivo aquí
+            </div>
+        </div>
+
+        <div class="loading" id="loader">
+            <div class="spinner"></div>
+            <p>Procesando datos...</p>
+        </div>
+
+        <!-- Grouping Interface -->
+        <div id="grouping-container">
+            <div class="results-header" style="border-bottom: none; margin-bottom: 10px;">
+                <h2 style="font-size: 1.5em; color: #333;">🛠️ Configuración de Grupos</h2>
+            </div>
+            <p style="color: #666; margin-bottom: 20px;">Combina diferentes unidades (ej. A, B, C) en un solo grupo arrastrándolas entre sí o seleccionándolas.</p>
+            
+            <div class="group-controls">
+                <input type="text" id="bulk-group-name" placeholder="Nombre para el grupo (ej. 1º ESO)">
+                <button class="btn" onclick="bulkGroup()">Agrupar Seleccionados</button>
+            </div>
+
+            <div class="group-list" id="group-list">
+                <!-- Groups injected via JS -->
+            </div>
+
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn" onclick="calculateAndShowResults()">Ver Resultados ➡️</button>
+            </div>
+        </div>
+
+        <!-- Results Interface -->
+        <div id="results">
+            <div class="results-header">
+                <h2 style="font-size: 1.8em; color: #333;" id="year-title">Resultados</h2>
+                <button class="btn btn-secondary" onclick="showGroupingUI()">⚙️ Reconfigurar Grupos</button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('section-1ev', this)">1ª Evaluación</button>
+                <button class="tab-btn" onclick="switchTab('section-2ev', this)">2ª Evaluación</button>
+                <button class="tab-btn" onclick="switchTab('section-ord', this)">Final (Ordinaria)</button>
+                <button class="tab-btn" id="tab-ext" onclick="switchTab('section-ext', this)" style="display:none;">Extraordinaria</button>
+            </div>
+
+            <div id="section-1ev" class="eval-section active">
+                <table id="table-1ev">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Alumnos</th>
+                            <th>Todo Aprobado</th>
+                            <th>1 Suspenso</th>
+                            <th>2 Suspensos</th>
+                            <th>3 Suspensos</th>
+                            <th>4+ Suspensos</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="section-2ev" class="eval-section">
+                <table id="table-2ev">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Alumnos</th>
+                            <th>Todo Aprobado</th>
+                            <th>1 Suspenso</th>
+                            <th>2 Suspensos</th>
+                            <th>3 Suspensos</th>
+                            <th>4+ Suspensos</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="section-ord" class="eval-section">
+                <table id="table-ord">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Alumnos</th>
+                            <th>Todo Aprobado</th>
+                            <th>1 Suspenso</th>
+                            <th>2 Suspensos</th>
+                            <th>3 Suspensos</th>
+                            <th>4+ Suspensos</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="section-ext" class="eval-section">
+                <table id="table-ext">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Alumnos</th>
+                            <th>Todo Aprobado</th>
+                            <th>1 Suspenso</th>
+                            <th>2 Suspensos</th>
+                            <th>3 Suspensos</th>
+                            <th>4+ Suspensos</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-
-    <div id="loader" class="loader">Procesando datos...</div>
-
-    <!-- Grouping Configuration Interface -->
-    <div id="grouping-container">
-        <h2>🛠️ Configuración de Grupos</h2>
-        <p>Selecciona las unidades que quieras agrupar bajo un mismo nombre.</p>
-        
-        <div class="group-controls">
-            <input type="text" id="bulk-group-name" placeholder="Nombre para el grupo (ej. 1º ESO)" style="flex:1; padding: 0.5rem;">
-            <button class="btn" style="margin:0;" onclick="bulkGroup()">Agrupar Seleccionados</button>
-        </div>
-
-        <div class="group-list" id="group-list">
-            <!-- Items injected via JS -->
-        </div>
-
-        <div style="text-align: right; margin-top: 1rem;">
-            <button class="btn" onclick="calculateAndShowResults()">Ver Resultados ➡️</button>
-        </div>
-    </div>
-
-    <div id="results" class="table-container">
-        <div style="padding: 1rem; display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
-            <h2 id="year-title" style="margin:0;">Resultados</h2>
-            <button class="btn" style="background-color: #64748b; font-size: 0.9rem; margin:0;" onclick="showGroupingUI()">⚙️ Agrupar Unidades</button>
-        </div>
-
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('section-1ev')">1ª Evaluación</button>
-            <button class="tab-btn" onclick="switchTab('section-2ev')">2ª Evaluación</button>
-            <button class="tab-btn" onclick="switchTab('section-ord')">Final (Ordinaria)</button>
-            <button class="tab-btn" id="tab-ext" onclick="switchTab('section-ext')" style="display:none;">Extraordinaria</button>
-        </div>
-
-        <div id="section-1ev" class="eval-section active">
-            <table id="table-1ev">
-                <thead>
-                    <tr>
-                        <th>Grupo</th>
-                        <th>Alumnos Totales</th>
-                        <th>Todo Aprobado</th>
-                        <th>1 Suspenso</th>
-                        <th>2 Suspensos</th>
-                        <th>3 Suspensos</th>
-                        <th>4+ Suspensos</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <div id="section-2ev" class="eval-section">
-            <table id="table-2ev">
-                <thead>
-                    <tr>
-                        <th>Grupo</th>
-                        <th>Alumnos Totales</th>
-                        <th>Todo Aprobado</th>
-                        <th>1 Suspenso</th>
-                        <th>2 Suspensos</th>
-                        <th>3 Suspensos</th>
-                        <th>4+ Suspensos</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <div id="section-ord" class="eval-section">
-            <table id="table-ord">
-                <thead>
-                    <tr>
-                        <th>Grupo</th>
-                        <th>Alumnos Totales</th>
-                        <th>Todo Aprobado</th>
-                        <th>1 Suspenso</th>
-                        <th>2 Suspensos</th>
-                        <th>3 Suspensos</th>
-                        <th>4+ Suspensos</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <div id="section-ext" class="eval-section">
-            <table id="table-ext">
-                <thead>
-                    <tr>
-                        <th>Grupo</th>
-                        <th>Alumnos Totales</th>
-                        <th>Todo Aprobado</th>
-                        <th>1 Suspenso</th>
-                        <th>2 Suspensos</th>
-                        <th>3 Suspensos</th>
-                        <th>4+ Suspensos</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-</div>
 
 <script>
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
+    const uploadSection = document.getElementById('uploadSection');
+    const fileInput = document.getElementById('csvFile');
     const tableContainer = document.getElementById('results');
     const groupingContainer = document.getElementById('grouping-container');
     const groupListEl = document.getElementById('group-list');
@@ -348,16 +477,14 @@
     const yearTitle = document.getElementById('year-title');
     const tabExt = document.getElementById('tab-ext');
 
-    let globalStudents = {}; // Stores parsed data
-    let globalUnits = [];    // List of unique units found
+    let globalStudents = {}; 
+    let globalUnits = [];    
     let academicYear = '';
-    
-    // Default tab
-    let currentTab = 'section-1ev';
 
-    // Drag and Drop Events
+    // Drag and Drop Events for Upload Section
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
+        uploadSection.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
     });
 
     function preventDefaults(e) {
@@ -366,14 +493,14 @@
     }
 
     ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        uploadSection.addEventListener(eventName, () => uploadSection.classList.add('dragover'), false);
     });
 
     ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        uploadSection.addEventListener(eventName, () => uploadSection.classList.remove('dragover'), false);
     });
 
-    dropZone.addEventListener('drop', handleFileDrop, false);
+    uploadSection.addEventListener('drop', handleFileDrop, false);
     fileInput.addEventListener('change', handleFiles, false);
 
     function handleFileDrop(e) {
@@ -384,102 +511,77 @@
 
     function handleFiles(e) {
         const file = e.target.files[0];
-        if (file && (file.name.endsWith('.csv') || file.name.endsWith('.CSV'))) {
-            processFile(file);
-        } else {
-            alert('Por favor, sube un archivo CSV válido.');
+        if (file) {
+             if (file.name.toLowerCase().endsWith('.csv')) {
+                document.getElementById('fileInfo').textContent = `📄 ${file.name}`;
+                processFile(file);
+             } else {
+                alert('Por favor, sube un archivo CSV válido.');
+             }
         }
     }
 
-    function switchTab(sectionId) {
+    function switchTab(sectionId, btnElement) {
         // Hide all sections
         document.querySelectorAll('.eval-section').forEach(el => el.classList.remove('active'));
         // Show target
         document.getElementById(sectionId).classList.add('active');
-        currentTab = sectionId;
+        
+        // Update buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        if(btnElement) btnElement.classList.add('active');
     }
 
-    // Add tab click listeners for styling
-    document.addEventListener('DOMContentLoaded', () => {
-        const tabs = document.querySelectorAll('.tab-btn');
-        tabs.forEach(btn => {
-            btn.addEventListener('click', function() {
-                tabs.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-    });
-
     function processFile(file) {
-        loader.style.display = 'block';
+        // Reset state for new file
+        globalStudents = {}; 
+        globalUnits = [];    
+        academicYear = '';
+
+        loader.classList.add('active');
         tableContainer.style.display = 'none';
         groupingContainer.style.display = 'none';
-
+        
         const reader = new FileReader();
         reader.readAsText(file, 'UTF-8'); 
         
         reader.onload = function(event) {
             try {
                 const csvData = event.target.result;
-                parseData(csvData); // Populates globalStudents and globalUnits
-                renderGroupingUI(); // Prepares the UI inputs with default values
+                parseData(csvData); 
+                renderGroupingUI(); 
                 
-                // Show results immediately with default grouping (identity)
+                // Show results immediately with default grouping
                 calculateAndShowResults();
-                loader.style.display = 'none';
+                loader.classList.remove('active');
             } catch (error) {
                 console.error(error);
                 alert('Error al procesar el fichero: ' + error.message);
-                loader.style.display = 'none';
+                loader.classList.remove('active');
+                uploadSection.style.display = 'block'; // Show upload again on error
             }
         };
     }
     
-    // New Parsing Logic
-    function parseData(csvText) {
-        // ... (rest of parseData is fine, no changes needed, it is huge so I will use replace on calculateAndShowResults next)
-        // Wait, replace tool needs exact match. I cannot skip parseData here if I am replacing the block containing it?
-        // No, I can replace just the constants block and handle events?
-        // Actually, the previous tool call replaced everything UP TO processFile.
-        // So parseData is intact below processFile.
-        // I just need to replace the variable declaration block at the top of script (which was included in the previous replace).
-        // BUT `calculateAndShowResults` is further down.
-        
-        // Strategy:
-        // 1. I already updated `const tabExt` in the previous block?
-        // Let's check the previous `new_string`.
-        // "const sectionExt = document.getElementById('section-ext'); // Note: This ID is used for tab switch logic now"
-        // It points to the DIV, not the TAB BUTTON.
-        // I need to correct this variable reference to point to the BUTTON 'tab-ext'.
-        
-        // And then update calculateAndShowResults.
-        
-        // Let's do a targeted replace for `calculateAndShowResults` first, and redefine `sectionExt` variable.
-    }
-    
-    // ACTUALLY, I will use a targeted replace for `calculateAndShowResults` logic.
-    // And another for the variable definition if needed, or just use `document.getElementById` inside the function to be safe.
-    
-    // Let's replace `calculateAndShowResults` completely.
-
-    // New Parsing Logic
     function parseData(csvText) {
         const lines = csvText.split(/\r?\n/);
         if (lines.length < 2) throw new Error('El archivo está vacío o no tiene cabecera');
 
         const headers = parseCSVLine(lines[0]);
-        const idxUnidad = headers.indexOf('UNIDAD');
-        const idxNia = headers.indexOf('NIA');
-        const idxNota1 = headers.indexOf('NOTA1EV');
-        const idxNota2 = headers.indexOf('NOTA2EV');
-        const idxNotaOrd = headers.indexOf('NOTAORD');
-        const idxNotaLomloe = headers.indexOf('EVFINAL(LOMLOE)');
-        const idxNotaExt = headers.indexOf('NOTAEXT');
-        const idxEstado = headers.indexOf('ESTADO');
-        const idxMateria = headers.indexOf('MATERIA_GENERAL');
-        const idxAnno = headers.indexOf('C_ANNO');
+        const indices = {
+            unidad: headers.indexOf('UNIDAD'),
+            nia: headers.indexOf('NIA'),
+            nota1: headers.indexOf('NOTA1EV'),
+            nota2: headers.indexOf('NOTA2EV'),
+            notaOrd: headers.indexOf('NOTAORD'),
+            notaLomloe: headers.indexOf('EVFINAL(LOMLOE)'),
+            notaExt: headers.indexOf('NOTAEXT'),
+            estado: headers.indexOf('ESTADO'),
+            materia: headers.indexOf('MATERIA_GENERAL'),
+            anno: headers.indexOf('C_ANNO')
+        };
 
-        if (idxUnidad === -1 || idxNia === -1 || idxNota1 === -1) {
+        if (indices.unidad === -1 || indices.nia === -1 || indices.nota1 === -1) {
             throw new Error('Columnas requeridas no encontradas (UNIDAD, NIA, NOTA1EV)');
         }
 
@@ -493,12 +595,12 @@
             const cols = parseCSVLine(line);
             if (cols.length < headers.length) continue;
 
-            const nia = cols[idxNia];
-            const unidad = cols[idxUnidad];
-            const estado = idxEstado !== -1 ? cols[idxEstado] : 'Matriculada';
-            const materia = idxMateria !== -1 ? cols[idxMateria] : '';
+            const nia = cols[indices.nia];
+            const unidad = cols[indices.unidad];
+            const estado = indices.estado !== -1 ? cols[indices.estado] : 'Matriculada';
+            const materia = indices.materia !== -1 ? cols[indices.materia] : '';
             
-            if (!academicYear && idxAnno !== -1) academicYear = cols[idxAnno];
+            if (!academicYear && indices.anno !== -1) academicYear = cols[indices.anno];
 
             if (estado !== 'Matriculada') continue;
 
@@ -519,43 +621,28 @@
             if (materia && globalStudents[nia].subjects.has(materia)) continue;
             if (materia) globalStudents[nia].subjects.add(materia);
 
-            // Analysis for each evaluation
             const processNota = (val) => {
                 if (!val) return false;
-                // Clean input: remove "-M" (Matrícula), replace comma.
-                // "10-M" -> "10", "9-M" -> "9".
-                // We also strip any other trailing text just in case for robustness, 
-                // but specifically handle the requested "-M".
                 let cleanVal = val.replace(',', '.').toUpperCase();
-                
-                // If it contains "IN" (Insuficiente) or "SB" (Sobresaliente), etc?
-                // Assuming numeric 1-10 mostly. 
-                // If it's pure text like "IN", parseFloat is NaN -> returns false (Pass). 
-                // We should check if we need to support textual grades. 
-                // For now, focusing on the "-M" numeric case.
-                
                 cleanVal = cleanVal.replace(/-M/g, ''); 
-                
                 const n = parseFloat(cleanVal);
                 return (!isNaN(n) && n < 5);
             };
 
-            if (processNota(cols[idxNota1])) globalStudents[nia].failures1ev++;
-            if (idxNota2 !== -1 && processNota(cols[idxNota2])) globalStudents[nia].failures2ev++;
+            if (processNota(cols[indices.nota1])) globalStudents[nia].failures1ev++;
+            if (indices.nota2 !== -1 && processNota(cols[indices.nota2])) globalStudents[nia].failures2ev++;
             
-            // Final Grade Logic: Prefer NOTAORD, fallback to EVFINAL(LOMLOE)
             let valFinal = '';
-            if (idxNotaOrd !== -1) valFinal = cols[idxNotaOrd];
-            if ((!valFinal || valFinal.trim() === '') && idxNotaLomloe !== -1) {
-                valFinal = cols[idxNotaLomloe];
+            if (indices.notaOrd !== -1) valFinal = cols[indices.notaOrd];
+            if ((!valFinal || valFinal.trim() === '') && indices.notaLomloe !== -1) {
+                valFinal = cols[indices.notaLomloe];
             }
             if (processNota(valFinal)) globalStudents[nia].failuresOrd++;
             
-            // Check Extra logic
-            if (idxNotaExt !== -1) {
-                const valExt = cols[idxNotaExt];
+            if (indices.notaExt !== -1) {
+                const valExt = cols[indices.notaExt];
                 if (valExt && valExt.trim() !== '') {
-                    globalStudents[nia].hasExt = true; // Mark student as having extra grades
+                    globalStudents[nia].hasExt = true;
                     if (processNota(valExt)) globalStudents[nia].failuresExt++;
                 }
             }
@@ -564,7 +651,6 @@
         globalUnits = Array.from(unitsSet).sort();
     }
 
-    // Grouping UI Logic
     function renderGroupingUI() {
         groupListEl.innerHTML = '';
         globalUnits.forEach(unit => {
@@ -573,7 +659,6 @@
             div.setAttribute('draggable', true);
             div.dataset.unit = unit;
             
-            // Drag Events
             div.addEventListener('dragstart', handleDragStart);
             div.addEventListener('dragover', handleDragOver);
             div.addEventListener('dragleave', handleDragLeave);
@@ -583,20 +668,19 @@
                 <input type="checkbox" class="unit-checkbox" value="${unit}">
                 <span class="original-name" style="pointer-events: none;">${unit}</span>
                 <span class="arrow-icon">➜</span>
-                <input type="text" class="mapped-name-input" data-original="${unit}" value="${unit}" readonly style="padding: 0.3rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #475569; width: 200px; pointer-events: none;">
+                <input type="text" class="mapped-name-input" data-original="${unit}" value="${unit}" readonly>
             `;
             groupListEl.appendChild(div);
         });
     }
 
-    // Drag & Drop Handlers
     function handleDragStart(e) {
         e.dataTransfer.setData('text/plain', this.dataset.unit);
         this.classList.add('dragging');
     }
 
     function handleDragOver(e) {
-        e.preventDefault(); // Necessary to allow dropping
+        e.preventDefault(); 
         this.classList.add('drag-over');
     }
 
@@ -615,33 +699,25 @@
         
         document.querySelectorAll('.group-item').forEach(el => el.classList.remove('dragging'));
 
-        // 1. Find the current groups
         const sourceInput = document.querySelector(`.mapped-name-input[data-original="${sourceUnit}"]`);
         const targetInput = document.querySelector(`.mapped-name-input[data-original="${targetUnit}"]`);
         
         const currentSourceGroup = sourceInput.value;
         const currentTargetGroup = targetInput.value;
 
-        // 2. Collect ALL original names involved in this merge
-        const allOriginalNames = [];
         const affectedInputs = [];
+        const allOriginalNames = [];
 
         document.querySelectorAll('.mapped-name-input').forEach(input => {
             if (input.value === currentSourceGroup || input.value === currentTargetGroup) {
-                allOriginalNames.push(input.dataset.original);
                 affectedInputs.push(input);
+                allOriginalNames.push(input.dataset.original);
             }
         });
 
-        // 3. Calculate common prefix of ALL involved units
         let commonName = getCommonPrefixArray(allOriginalNames);
-        
-        if (commonName.length < 1) {
-             console.log("No common prefix found among all units, skipping group merge.");
-             return; 
-        }
+        if (commonName.length < 1) return;
 
-        // 4. Update inputs
         affectedInputs.forEach(input => {
             input.value = commonName;
             input.style.backgroundColor = '#dbeafe';
@@ -661,10 +737,6 @@
         return prefix;
     }
 
-    // Legacy 2-string helper (can be removed if unused, but keeping just in case or replacing with above)
-    // Actually, I'll just replace the old function completely with the array version.
-
-
     function bulkGroup() {
         const newName = document.getElementById('bulk-group-name').value.trim();
         if (!newName) return alert('Escribe un nombre para el grupo.');
@@ -676,10 +748,10 @@
             const originalUnit = cb.value;
             const input = document.querySelector(`.mapped-name-input[data-original="${originalUnit}"]`);
             if (input) input.value = newName;
-            cb.checked = false; // Uncheck after applying
+            cb.checked = false; 
         });
         
-        document.getElementById('bulk-group-name').value = ''; // Clear input
+        document.getElementById('bulk-group-name').value = ''; 
     }
 
     function showGroupingUI() {
@@ -688,7 +760,6 @@
     }
 
     function calculateAndShowResults() {
-        // Build mapping
         const mapping = {};
         document.querySelectorAll('.mapped-name-input').forEach(input => {
             mapping[input.dataset.original] = input.value.trim() || input.dataset.original;
@@ -702,20 +773,18 @@
         renderTable('table-1ev', stats1ev);
         renderTable('table-2ev', stats2ev);
         renderTable('table-ord', statsOrd);
-        renderTable('table-ext', statsExt); // Always render, just hide tab if empty
+        renderTable('table-ext', statsExt); 
         
         if (statsExt.length > 0) {
             tabExt.style.display = 'block';
         } else {
             tabExt.style.display = 'none';
-            // If we are currently viewing the extra tab (which is now hidden), switch to 1ev
             if (document.getElementById('section-ext').classList.contains('active')) {
-                switchTab('section-1ev');
-                document.querySelector('.tab-btn').classList.add('active'); // Activate first btn
+                switchTab('section-1ev', document.querySelector('.tab-btn'));
             }
         }
         
-        if (academicYear) yearTitle.innerText = `Resultados - Año ${academicYear}`;
+        if (academicYear) yearTitle.innerText = `Resultados - Curso ${academicYear}`;
         
         groupingContainer.style.display = 'none';
         tableContainer.style.display = 'block';
@@ -725,10 +794,7 @@
         const groups = {}; 
 
         Object.values(globalStudents).forEach(student => {
-            // Filter: If requiredKey is set (e.g., 'hasExt'), strictly ignore students without it
-            if (requiredKey && !student[requiredKey]) {
-                return;
-            }
+            if (requiredKey && !student[requiredKey]) return;
 
             const rawUnit = student.unidad;
             const mappedGroup = unitMapping[rawUnit] || rawUnit;
@@ -753,9 +819,8 @@
         }));
     }
 
-    // CSV Parsing Logic
     function parseCSVLine(line) {
-        const regex = /,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/; 
+        const regex = /,(?=(?:(?:[^"]*\"){2})*[^"]*$)/; 
         return line.split(regex).map(field => field.trim().replace(/^"|"$/g, ''));
     }
 
