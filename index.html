@@ -611,46 +611,59 @@
         const sourceUnit = e.dataTransfer.getData('text/plain');
         const targetUnit = this.dataset.unit;
         
-        // Don't do anything if dropping on itself
         if (sourceUnit === targetUnit) return;
         
-        // Remove dragging class from all
         document.querySelectorAll('.group-item').forEach(el => el.classList.remove('dragging'));
 
-        // 1. Calculate common name
-        let commonName = getCommonPrefix(sourceUnit, targetUnit);
-        
-        // 2. ONLY group if there is a common part in the name
-        if (commonName.length < 1) {
-             console.log("No common prefix found, skipping group merge.");
-             return; 
-        }
-
-        // 3. Find the *current* group names for both source and target 
-        // (in case they were already renamed/grouped)
+        // 1. Find the current groups
         const sourceInput = document.querySelector(`.mapped-name-input[data-original="${sourceUnit}"]`);
         const targetInput = document.querySelector(`.mapped-name-input[data-original="${targetUnit}"]`);
         
         const currentSourceGroup = sourceInput.value;
         const currentTargetGroup = targetInput.value;
 
-        // 4. Update ALL inputs that currently match either the source's group OR the target's group
+        // 2. Collect ALL original names involved in this merge
+        const allOriginalNames = [];
+        const affectedInputs = [];
+
         document.querySelectorAll('.mapped-name-input').forEach(input => {
             if (input.value === currentSourceGroup || input.value === currentTargetGroup) {
-                input.value = commonName;
-                input.style.backgroundColor = '#dbeafe';
-                setTimeout(() => input.style.backgroundColor = '#f8fafc', 500);
+                allOriginalNames.push(input.dataset.original);
+                affectedInputs.push(input);
             }
+        });
+
+        // 3. Calculate common prefix of ALL involved units
+        let commonName = getCommonPrefixArray(allOriginalNames);
+        
+        if (commonName.length < 1) {
+             console.log("No common prefix found among all units, skipping group merge.");
+             return; 
+        }
+
+        // 4. Update inputs
+        affectedInputs.forEach(input => {
+            input.value = commonName;
+            input.style.backgroundColor = '#dbeafe';
+            setTimeout(() => input.style.backgroundColor = '#f8fafc', 500);
         });
     }
 
-    function getCommonPrefix(str1, str2) {
-        let i = 0;
-        while(i < str1.length && i < str2.length && str1[i] === str2[i]) {
-            i++;
+    function getCommonPrefixArray(strings) {
+        if (!strings || strings.length === 0) return "";
+        let prefix = strings[0];
+        for (let i = 1; i < strings.length; i++) {
+            while (strings[i].indexOf(prefix) !== 0) {
+                prefix = prefix.substring(0, prefix.length - 1);
+                if (prefix === "") return "";
+            }
         }
-        return str1.substring(0, i).trim();
+        return prefix;
     }
+
+    // Legacy 2-string helper (can be removed if unused, but keeping just in case or replacing with above)
+    // Actually, I'll just replace the old function completely with the array version.
+
 
     function bulkGroup() {
         const newName = document.getElementById('bulk-group-name').value.trim();
