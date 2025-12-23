@@ -109,6 +109,19 @@
             padding: 0.5rem 1rem;
             border-bottom: 1px solid var(--border-color);
             gap: 1rem;
+            cursor: grab; /* Indicates draggable */
+            transition: all 0.2s ease;
+        }
+
+        .group-item.dragging {
+            opacity: 0.5;
+            background-color: #f1f5f9;
+        }
+
+        .group-item.drag-over {
+            background-color: #e0f2fe; /* Light blue highlight */
+            border: 2px dashed var(--primary-color);
+            transform: scale(1.02);
         }
 
         .group-item:last-child {
@@ -360,10 +373,10 @@
         dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
     });
 
-    dropZone.addEventListener('drop', handleDrop, false);
+    dropZone.addEventListener('drop', handleFileDrop, false);
     fileInput.addEventListener('change', handleFiles, false);
 
-    function handleDrop(e) {
+    function handleFileDrop(e) {
         const dt = e.dataTransfer;
         const files = dt.files;
         handleFiles({ target: { files: files } });
@@ -557,14 +570,86 @@
         globalUnits.forEach(unit => {
             const div = document.createElement('div');
             div.className = 'group-item';
+            div.setAttribute('draggable', true);
+            div.dataset.unit = unit;
+            
+            // Drag Events
+            div.addEventListener('dragstart', handleDragStart);
+            div.addEventListener('dragover', handleDragOver);
+            div.addEventListener('dragleave', handleDragLeave);
+            div.addEventListener('drop', handleDrop);
+
             div.innerHTML = `
                 <input type="checkbox" class="unit-checkbox" value="${unit}">
-                <span class="original-name">${unit}</span>
+                <span class="original-name" style="pointer-events: none;">${unit}</span>
                 <span class="arrow-icon">➜</span>
-                <input type="text" class="mapped-name-input" data-original="${unit}" value="${unit}" readonly style="padding: 0.3rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #475569; width: 200px;">
+                <input type="text" class="mapped-name-input" data-original="${unit}" value="${unit}" readonly style="padding: 0.3rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #475569; width: 200px; pointer-events: none;">
             `;
             groupListEl.appendChild(div);
         });
+    }
+
+    // Drag & Drop Handlers
+    function handleDragStart(e) {
+        e.dataTransfer.setData('text/plain', this.dataset.unit);
+        this.classList.add('dragging');
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault(); // Necessary to allow dropping
+        this.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        const sourceUnit = e.dataTransfer.getData('text/plain');
+        const targetUnit = this.dataset.unit;
+        
+        // Don't do anything if dropping on itself
+        if (sourceUnit === targetUnit) return;
+        
+        // Remove dragging class from all
+        document.querySelectorAll('.group-item').forEach(el => el.classList.remove('dragging'));
+
+        // 1. Calculate common name
+        let commonName = getCommonPrefix(sourceUnit, targetUnit);
+        
+        // 2. ONLY group if there is a common part in the name
+        if (commonName.length < 1) {
+             console.log("No common prefix found, skipping group merge.");
+             return; 
+        }
+
+        // 3. Find the *current* group names for both source and target 
+        // (in case they were already renamed/grouped)
+        const sourceInput = document.querySelector(`.mapped-name-input[data-original="${sourceUnit}"]`);
+        const targetInput = document.querySelector(`.mapped-name-input[data-original="${targetUnit}"]`);
+        
+        const currentSourceGroup = sourceInput.value;
+        const currentTargetGroup = targetInput.value;
+
+        // 4. Update ALL inputs that currently match either the source's group OR the target's group
+        document.querySelectorAll('.mapped-name-input').forEach(input => {
+            if (input.value === currentSourceGroup || input.value === currentTargetGroup) {
+                input.value = commonName;
+                input.style.backgroundColor = '#dbeafe';
+                setTimeout(() => input.style.backgroundColor = '#f8fafc', 500);
+            }
+        });
+    }
+
+    function getCommonPrefix(str1, str2) {
+        let i = 0;
+        while(i < str1.length && i < str2.length && str1[i] === str2[i]) {
+            i++;
+        }
+        return str1.substring(0, i).trim();
     }
 
     function bulkGroup() {
