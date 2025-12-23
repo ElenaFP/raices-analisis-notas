@@ -256,6 +256,24 @@
                 <tbody></tbody>
             </table>
         </div>
+
+        <div id="section-ext" class="eval-section" style="margin-top: 2rem; border-top: 2px solid var(--bg-color); display: none;">
+            <h3 style="padding: 1rem 1rem 0 1rem; margin: 0; color: var(--primary-color);">Evaluación Extraordinaria (NOTAEXT)</h3>
+            <table id="table-ext">
+                <thead>
+                    <tr>
+                        <th>Grupo</th>
+                        <th>Alumnos Totales</th>
+                        <th>Todo Aprobado</th>
+                        <th>1 Suspenso</th>
+                        <th>2 Suspensos</th>
+                        <th>3 Suspensos</th>
+                        <th>4+ Suspensos</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -267,6 +285,7 @@
     const groupListEl = document.getElementById('group-list');
     const loader = document.getElementById('loader');
     const yearTitle = document.getElementById('year-title');
+    const sectionExt = document.getElementById('section-ext');
 
     let globalStudents = {}; // Stores parsed data
     let globalUnits = [];    // List of unique units found
@@ -344,6 +363,8 @@
         const idxNota1 = headers.indexOf('NOTA1EV');
         const idxNota2 = headers.indexOf('NOTA2EV');
         const idxNotaOrd = headers.indexOf('NOTAORD');
+        const idxNotaLomloe = headers.indexOf('EVFINAL(LOMLOE)');
+        const idxNotaExt = headers.indexOf('NOTAEXT');
         const idxEstado = headers.indexOf('ESTADO');
         const idxMateria = headers.indexOf('MATERIA_GENERAL');
         const idxAnno = headers.indexOf('C_ANNO');
@@ -379,6 +400,8 @@
                     failures1ev: 0,
                     failures2ev: 0,
                     failuresOrd: 0,
+                    failuresExt: 0,
+                    hasExt: false,
                     subjects: new Set()
                 };
             }
@@ -388,13 +411,44 @@
 
             // Analysis for each evaluation
             const processNota = (val) => {
-                const n = parseFloat(val.replace(',', '.'));
+                if (!val) return false;
+                // Clean input: remove "-M" (Matrícula), replace comma.
+                // "10-M" -> "10", "9-M" -> "9".
+                // We also strip any other trailing text just in case for robustness, 
+                // but specifically handle the requested "-M".
+                let cleanVal = val.replace(',', '.').toUpperCase();
+                
+                // If it contains "IN" (Insuficiente) or "SB" (Sobresaliente), etc?
+                // Assuming numeric 1-10 mostly. 
+                // If it's pure text like "IN", parseFloat is NaN -> returns false (Pass). 
+                // We should check if we need to support textual grades. 
+                // For now, focusing on the "-M" numeric case.
+                
+                cleanVal = cleanVal.replace(/-M/g, ''); 
+                
+                const n = parseFloat(cleanVal);
                 return (!isNaN(n) && n < 5);
             };
 
             if (processNota(cols[idxNota1])) globalStudents[nia].failures1ev++;
             if (idxNota2 !== -1 && processNota(cols[idxNota2])) globalStudents[nia].failures2ev++;
-            if (idxNotaOrd !== -1 && processNota(cols[idxNotaOrd])) globalStudents[nia].failuresOrd++;
+            
+            // Final Grade Logic: Prefer NOTAORD, fallback to EVFINAL(LOMLOE)
+            let valFinal = '';
+            if (idxNotaOrd !== -1) valFinal = cols[idxNotaOrd];
+            if ((!valFinal || valFinal.trim() === '') && idxNotaLomloe !== -1) {
+                valFinal = cols[idxNotaLomloe];
+            }
+            if (processNota(valFinal)) globalStudents[nia].failuresOrd++;
+            
+            // Check Extra logic
+            if (idxNotaExt !== -1) {
+                const valExt = cols[idxNotaExt];
+                if (valExt && valExt.trim() !== '') {
+                    globalStudents[nia].hasExt = true; // Mark student as having extra grades
+                    if (processNota(valExt)) globalStudents[nia].failuresExt++;
+                }
+            }
         }
 
         globalUnits = Array.from(unitsSet).sort();
@@ -448,10 +502,18 @@
         const stats1ev = analyzeGradesWithMapping(mapping, 'failures1ev');
         const stats2ev = analyzeGradesWithMapping(mapping, 'failures2ev');
         const statsOrd = analyzeGradesWithMapping(mapping, 'failuresOrd');
+        const statsExt = analyzeGradesWithMapping(mapping, 'failuresExt', 'hasExt');
         
         renderTable('table-1ev', stats1ev);
         renderTable('table-2ev', stats2ev);
         renderTable('table-ord', statsOrd);
+        
+        if (statsExt.length > 0) {
+            renderTable('table-ext', statsExt);
+            sectionExt.style.display = 'block';
+        } else {
+            sectionExt.style.display = 'none';
+        }
         
         if (academicYear) yearTitle.innerText = `Resultados - Año ${academicYear}`;
         
@@ -459,10 +521,15 @@
         tableContainer.style.display = 'block';
     }
 
-    function analyzeGradesWithMapping(unitMapping, failureKey) {
+    function analyzeGradesWithMapping(unitMapping, failureKey, requiredKey = null) {
         const groups = {}; 
 
         Object.values(globalStudents).forEach(student => {
+            // Filter: If requiredKey is set (e.g., 'hasExt'), strictly ignore students without it
+            if (requiredKey && !student[requiredKey]) {
+                return;
+            }
+
             const rawUnit = student.unidad;
             const mappedGroup = unitMapping[rawUnit] || rawUnit;
 
