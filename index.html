@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Notas - 1ª Evaluación</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+        }
+
+        /* Drag and Drop Zone */
+        #drop-zone {
+            border: 3px dashed var(--border-color);
+            border-radius: 1rem;
+            padding: 3rem;
+            text-align: center;
+            background-color: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+
+        #drop-zone.dragover {
+            border-color: var(--primary-color);
+            background-color: #eff6ff;
+            transform: scale(1.01);
+        }
+
+        #drop-zone p {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #64748b;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Button */
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Grouping UI */
+        #grouping-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .group-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #f1f5f9;
+            border-radius: 0.5rem;
+            align-items: center;
+        }
+
+        .group-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+
+        .group-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            gap: 1rem;
+        }
+
+        .group-item:last-child {
+            border-bottom: none;
+        }
+
+        .group-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .original-name {
+            flex: 1;
+            font-family: monospace;
+            color: #64748b;
+        }
+
+        .arrow-icon {
+            color: #94a3b8;
+        }
+
+        /* Results Table */
+        .table-container {
+            overflow-x: auto;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: none; /* Hidden by default */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Stat highlights */
+        .good { color: #16a34a; font-weight: bold; }
+        .bad { color: #dc2626; }
+        .warning { color: #d97706; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Análisis de Resultados por Grupo</h1>
+
+    <div id="drop-zone">
+        <p>📂 Arrastra tu fichero CSV aquí o haz clic para seleccionar</p>
+        <button class="btn" onclick="document.getElementById('file-input').click()">Seleccionar Fichero</button>
+        <input type="file" id="file-input" accept=".csv">
+    </div>
+
+    <div id="loader" class="loader">Procesando datos...</div>
+
+    <!-- Grouping Configuration Interface -->
+    <div id="grouping-container">
+        <h2>🛠️ Configuración de Grupos</h2>
+        <p>Selecciona las unidades que quieras agrupar bajo un mismo nombre.</p>
+        
+        <div class="group-controls">
+            <input type="text" id="bulk-group-name" placeholder="Nombre para el grupo (ej. 1º ESO)" style="flex:1; padding: 0.5rem;">
+            <button class="btn" style="margin:0;" onclick="bulkGroup()">Agrupar Seleccionados</button>
+        </div>
+
+        <div class="group-list" id="group-list">
+            <!-- Items injected via JS -->
+        </div>
+
+        <div style="text-align: right; margin-top: 1rem;">
+            <button class="btn" onclick="calculateAndShowResults()">Ver Resultados ➡️</button>
+        </div>
+    </div>
+
+    <div id="results" class="table-container">
+        <div style="padding: 1rem; display:flex; justify-content:space-between; align-items:center;">
+            <h2>Resultados</h2>
+            <button class="btn" style="background-color: #64748b; font-size: 0.9rem;" onclick="showGroupingUI()">⚙️ Agrupar Unidades</button>
+        </div>
+        <table id="stats-table">
+            <thead>
+                <tr>
+                    <th>Grupo</th>
+                    <th>Alumnos Totales</th>
+                    <th>Todo Aprobado</th>
+                    <th>1 Suspenso</th>
+                    <th>2 Suspensos</th>
+                    <th>3 Suspensos</th>
+                    <th>4+ Suspensos</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const tableContainer = document.getElementById('results');
+    const groupingContainer = document.getElementById('grouping-container');
+    const groupListEl = document.getElementById('group-list');
+    const tableBody = document.querySelector('#stats-table tbody');
+    const loader = document.getElementById('loader');
+
+    let globalStudents = {}; // Stores parsed data
+    let globalUnits = [];    // List of unique units found
+
+    // Drag and Drop Events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+
+    dropZone.addEventListener('drop', handleDrop, false);
+    fileInput.addEventListener('change', handleFiles, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles({ target: { files: files } });
+    }
+
+    function handleFiles(e) {
+        const file = e.target.files[0];
+        if (file && (file.name.endsWith('.csv') || file.name.endsWith('.CSV'))) {
+            processFile(file);
+        } else {
+            alert('Por favor, sube un archivo CSV válido.');
+        }
+    }
+
+    function processFile(file) {
+        loader.style.display = 'block';
+        tableContainer.style.display = 'none';
+        groupingContainer.style.display = 'none';
+
+        const reader = new FileReader();
+        reader.readAsText(file, 'UTF-8'); 
+        
+        reader.onload = function(event) {
+            try {
+                const csvData = event.target.result;
+                parseData(csvData); // Populates globalStudents and globalUnits
+                renderGroupingUI(); // Prepares the UI inputs with default values
+                
+                // Show results immediately with default grouping (identity)
+                calculateAndShowResults();
+                loader.style.display = 'none';
+            } catch (error) {
+                console.error(error);
+                alert('Error al procesar el fichero: ' + error.message);
+                loader.style.display = 'none';
+            }
+        };
+    }
+
+    // New Parsing Logic (Just extracts data, doesn't aggregate yet)
+    function parseData(csvText) {
+        const lines = csvText.split(/\r?\n/);
+        if (lines.length < 2) throw new Error('El archivo está vacío o no tiene cabecera');
+
+        const headers = parseCSVLine(lines[0]);
+        const idxUnidad = headers.indexOf('UNIDAD');
+        const idxNia = headers.indexOf('NIA');
+        const idxNota = headers.indexOf('NOTA1EV');
+        const idxEstado = headers.indexOf('ESTADO');
+        const idxMateria = headers.indexOf('MATERIA_GENERAL');
+
+        if (idxUnidad === -1 || idxNia === -1 || idxNota === -1) {
+            throw new Error('Columnas requeridas no encontradas (UNIDAD, NIA, NOTA1EV)');
+        }
+
+        globalStudents = {};
+        const unitsSet = new Set();
+
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const cols = parseCSVLine(line);
+            if (cols.length < headers.length) continue;
+
+            const nia = cols[idxNia];
+            const unidad = cols[idxUnidad];
+            const notaStr = cols[idxNota];
+            const estado = idxEstado !== -1 ? cols[idxEstado] : 'Matriculada';
+            const materia = idxMateria !== -1 ? cols[idxMateria] : '';
+
+            if (estado !== 'Matriculada') continue;
+
+            unitsSet.add(unidad);
+
+            if (!globalStudents[nia]) {
+                globalStudents[nia] = {
+                    unidad: unidad,
+                    failures: 0,
+                    subjects: new Set()
+                };
+            }
+
+            if (materia && globalStudents[nia].subjects.has(materia)) continue;
+            if (materia) globalStudents[nia].subjects.add(materia);
+
+            const nota = parseFloat(notaStr.replace(',', '.'));
+            if (!isNaN(nota) && nota < 5) {
+                globalStudents[nia].failures++;
+            }
+        }
+
+        globalUnits = Array.from(unitsSet).sort();
+    }
+
+    // Grouping UI Logic
+    function renderGroupingUI() {
+        groupListEl.innerHTML = '';
+        globalUnits.forEach(unit => {
+            const div = document.createElement('div');
+            div.className = 'group-item';
+            div.innerHTML = `
+                <input type="checkbox" class="unit-checkbox" value="${unit}">
+                <span class="original-name">${unit}</span>
+                <span class="arrow-icon">➜</span>
+                <input type="text" class="mapped-name-input" data-original="${unit}" value="${unit}" readonly style="padding: 0.3rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #475569; width: 200px;">
+            `;
+            groupListEl.appendChild(div);
+        });
+    }
+
+    function bulkGroup() {
+        const newName = document.getElementById('bulk-group-name').value.trim();
+        if (!newName) return alert('Escribe un nombre para el grupo.');
+        
+        const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
+        if (checkboxes.length === 0) return alert('Selecciona al menos una unidad.');
+
+        checkboxes.forEach(cb => {
+            const originalUnit = cb.value;
+            const input = document.querySelector(`.mapped-name-input[data-original="${originalUnit}"]`);
+            if (input) input.value = newName;
+            cb.checked = false; // Uncheck after applying
+        });
+        
+        document.getElementById('bulk-group-name').value = ''; // Clear input
+    }
+
+    function showGroupingUI() {
+        tableContainer.style.display = 'none';
+        groupingContainer.style.display = 'block';
+    }
+
+    function calculateAndShowResults() {
+        // Build mapping
+        const mapping = {};
+        document.querySelectorAll('.mapped-name-input').forEach(input => {
+            mapping[input.dataset.original] = input.value.trim() || input.dataset.original;
+        });
+
+        const stats = analyzeGradesWithMapping(mapping);
+        renderTable(stats);
+        
+        groupingContainer.style.display = 'none';
+        tableContainer.style.display = 'block';
+    }
+
+    function analyzeGradesWithMapping(unitMapping) {
+        // Aggregation per Group (using mapping)
+        const groups = {}; 
+
+        Object.values(globalStudents).forEach(student => {
+            const rawUnit = student.unidad;
+            const mappedGroup = unitMapping[rawUnit] || rawUnit;
+
+            if (!groups[mappedGroup]) {
+                groups[mappedGroup] = { total: 0, pass: 0, f1: 0, f2: 0, f3: 0, f4p: 0 };
+            }
+
+            groups[mappedGroup].total++;
+
+            if (student.failures === 0) groups[mappedGroup].pass++;
+            else if (student.failures === 1) groups[mappedGroup].f1++;
+            else if (student.failures === 2) groups[mappedGroup].f2++;
+            else if (student.failures === 3) groups[mappedGroup].f3++;
+            else groups[mappedGroup].f4p++;
+        });
+
+        return Object.keys(groups).sort().map(grpName => ({
+            name: grpName,
+            ...groups[grpName]
+        }));
+    }
+
+    // CSV Parsing Logic
+    function parseCSVLine(line) {
+        // Regex to split by comma, ignoring commas inside double quotes
+        // Matches: "," followed by even number of quotes until end of string
+        const regex = /,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/; 
+        return line.split(regex).map(field => {
+            // Remove surrounding quotes if present
+            return field.trim().replace(/^"|"$/g, '');
+        });
+    }
+
+    function renderTable(stats) {
+        tableBody.innerHTML = '';
+        
+        stats.forEach(grp => {
+            const row = document.createElement('tr');
+            
+            // Calculate percentages for tooltip or clarity? Just counts for now as requested.
+            
+            row.innerHTML = `
+                <td><strong>${grp.name}</strong></td>
+                <td>${grp.total}</td>
+                <td class="good">${grp.pass}</td>
+                <td>${grp.f1}</td>
+                <td class="warning">${grp.f2}</td>
+                <td class="bad">${grp.f3}</td>
+                <td class="bad" style="font-weight:bold">${grp.f4p}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+</script>
+
+</body>
+</html>
