@@ -118,11 +118,30 @@
             transform: translateY(-2px);
             box-shadow: none;
         }
+        
+        /* Download Button (matches raices style) */
+        .download-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-left: 15px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
 
         /* Grouping Section */
         #grouping-container {
             background: #fff;
-            padding: 0; /* Container padding handles it */
+            padding: 0;
             margin-bottom: 30px;
             display: none;
         }
@@ -260,6 +279,20 @@
             overflow: hidden;
             margin-bottom: 20px;
         }
+        
+        /* Table Headers Container to align title and button */
+        .table-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .table-title {
+            font-size: 1.2em; 
+            font-weight: bold; 
+            color: #475569;
+        }
 
         thead {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -337,6 +370,8 @@
             table { display: block; overflow-x: auto; white-space: nowrap; }
             .group-item { flex-direction: column; align-items: stretch; }
             .mapped-name-input { width: 100%; }
+            .table-header-container { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .download-btn { margin-left: 0; }
         }
     </style>
 </head>
@@ -398,6 +433,10 @@
             </div>
 
             <div id="section-1ev" class="eval-section active">
+                <div class="table-header-container">
+                    <span class="table-title">Resultados 1ª Evaluación</span>
+                    <button class="download-btn" onclick="downloadCSV('1ev')">⬇️ Descargar CSV</button>
+                </div>
                 <table id="table-1ev">
                     <thead>
                         <tr>
@@ -415,6 +454,10 @@
             </div>
 
             <div id="section-2ev" class="eval-section">
+                <div class="table-header-container">
+                    <span class="table-title">Resultados 2ª Evaluación</span>
+                    <button class="download-btn" onclick="downloadCSV('2ev')">⬇️ Descargar CSV</button>
+                </div>
                 <table id="table-2ev">
                     <thead>
                         <tr>
@@ -432,6 +475,10 @@
             </div>
 
             <div id="section-ord" class="eval-section">
+                <div class="table-header-container">
+                    <span class="table-title">Resultados Finales (Ordinaria)</span>
+                    <button class="download-btn" onclick="downloadCSV('ord')">⬇️ Descargar CSV</button>
+                </div>
                 <table id="table-ord">
                     <thead>
                         <tr>
@@ -449,6 +496,10 @@
             </div>
 
             <div id="section-ext" class="eval-section">
+                <div class="table-header-container">
+                    <span class="table-title">Resultados Extraordinaria</span>
+                    <button class="download-btn" onclick="downloadCSV('ext')">⬇️ Descargar CSV</button>
+                </div>
                 <table id="table-ext">
                     <thead>
                         <tr>
@@ -480,6 +531,7 @@
     let globalStudents = {}; 
     let globalUnits = [];    
     let academicYear = '';
+    let currentStats = {}; // Store stats for download
 
     // Drag and Drop Events for Upload Section
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -537,6 +589,7 @@
         globalStudents = {}; 
         globalUnits = [];    
         academicYear = '';
+        currentStats = {};
 
         loader.classList.add('active');
         tableContainer.style.display = 'none';
@@ -765,17 +818,20 @@
             mapping[input.dataset.original] = input.value.trim() || input.dataset.original;
         });
 
-        const stats1ev = analyzeGradesWithMapping(mapping, 'failures1ev');
-        const stats2ev = analyzeGradesWithMapping(mapping, 'failures2ev');
-        const statsOrd = analyzeGradesWithMapping(mapping, 'failuresOrd');
-        const statsExt = analyzeGradesWithMapping(mapping, 'failuresExt', 'hasExt');
+        // Store stats in global variable for download
+        currentStats = {
+            '1ev': analyzeGradesWithMapping(mapping, 'failures1ev'),
+            '2ev': analyzeGradesWithMapping(mapping, 'failures2ev'),
+            'ord': analyzeGradesWithMapping(mapping, 'failuresOrd'),
+            'ext': analyzeGradesWithMapping(mapping, 'failuresExt', 'hasExt')
+        };
         
-        renderTable('table-1ev', stats1ev);
-        renderTable('table-2ev', stats2ev);
-        renderTable('table-ord', statsOrd);
-        renderTable('table-ext', statsExt); 
+        renderTable('table-1ev', currentStats['1ev']);
+        renderTable('table-2ev', currentStats['2ev']);
+        renderTable('table-ord', currentStats['ord']);
+        renderTable('table-ext', currentStats['ext']); 
         
-        if (statsExt.length > 0) {
+        if (currentStats['ext'].length > 0) {
             tabExt.style.display = 'block';
         } else {
             tabExt.style.display = 'none';
@@ -819,8 +875,34 @@
         }));
     }
 
+    function downloadCSV(evalKey) {
+        const stats = currentStats[evalKey];
+        if (!stats || stats.length === 0) return alert('No hay datos para descargar en esta evaluación.');
+
+        let csv = 'GRUPO,ALUMNOS,TODO_APROBADO,1_SUSPENSO,2_SUSPENSOS,3_SUSPENSOS,4_O_MAS_SUSPENSOS\n';
+
+        stats.forEach(grp => {
+            csv += `"${grp.name}",${grp.total},${grp.pass},${grp.f1},${grp.f2},${grp.f3},${grp.f4p}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        const suffixMap = { '1ev': '1EV', '2ev': '2EV', 'ord': 'FINAL', 'ext': 'EXTRA' };
+        const suffix = suffixMap[evalKey] || 'STATS';
+        const fileName = `${academicYear}_${suffix}.csv`;
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     function parseCSVLine(line) {
-        const regex = /,(?=(?:(?:[^"]*\"){2})*[^"]*$)/; 
+        const regex = /,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/; 
         return line.split(regex).map(field => field.trim().replace(/^"|"$/g, ''));
     }
 
