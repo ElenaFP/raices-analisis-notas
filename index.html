@@ -198,26 +198,64 @@
     </div>
 
     <div id="results" class="table-container">
-        <div style="padding: 1rem; display:flex; justify-content:space-between; align-items:center;">
-            <h2>Resultados</h2>
+        <div style="padding: 1rem; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color);">
+            <h2 id="year-title">Resultados</h2>
             <button class="btn" style="background-color: #64748b; font-size: 0.9rem;" onclick="showGroupingUI()">⚙️ Agrupar Unidades</button>
         </div>
-        <table id="stats-table">
-            <thead>
-                <tr>
-                    <th>Grupo</th>
-                    <th>Alumnos Totales</th>
-                    <th>Todo Aprobado</th>
-                    <th>1 Suspenso</th>
-                    <th>2 Suspensos</th>
-                    <th>3 Suspensos</th>
-                    <th>4+ Suspensos</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Rows will be inserted here -->
-            </tbody>
-        </table>
+
+        <div class="eval-section">
+            <h3 style="padding: 1rem 1rem 0 1rem; margin: 0; color: var(--primary-color);">1ª Evaluación (NOTA1EV)</h3>
+            <table id="table-1ev">
+                <thead>
+                    <tr>
+                        <th>Grupo</th>
+                        <th>Alumnos Totales</th>
+                        <th>Todo Aprobado</th>
+                        <th>1 Suspenso</th>
+                        <th>2 Suspensos</th>
+                        <th>3 Suspensos</th>
+                        <th>4+ Suspensos</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="eval-section" style="margin-top: 2rem; border-top: 2px solid var(--bg-color);">
+            <h3 style="padding: 1rem 1rem 0 1rem; margin: 0; color: var(--primary-color);">2ª Evaluación (NOTA2EV)</h3>
+            <table id="table-2ev">
+                <thead>
+                    <tr>
+                        <th>Grupo</th>
+                        <th>Alumnos Totales</th>
+                        <th>Todo Aprobado</th>
+                        <th>1 Suspenso</th>
+                        <th>2 Suspensos</th>
+                        <th>3 Suspensos</th>
+                        <th>4+ Suspensos</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="eval-section" style="margin-top: 2rem; border-top: 2px solid var(--bg-color);">
+            <h3 style="padding: 1rem 1rem 0 1rem; margin: 0; color: var(--primary-color);">Evaluación Final (NOTAORD)</h3>
+            <table id="table-ord">
+                <thead>
+                    <tr>
+                        <th>Grupo</th>
+                        <th>Alumnos Totales</th>
+                        <th>Todo Aprobado</th>
+                        <th>1 Suspenso</th>
+                        <th>2 Suspensos</th>
+                        <th>3 Suspensos</th>
+                        <th>4+ Suspensos</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -227,11 +265,12 @@
     const tableContainer = document.getElementById('results');
     const groupingContainer = document.getElementById('grouping-container');
     const groupListEl = document.getElementById('group-list');
-    const tableBody = document.querySelector('#stats-table tbody');
     const loader = document.getElementById('loader');
+    const yearTitle = document.getElementById('year-title');
 
     let globalStudents = {}; // Stores parsed data
     let globalUnits = [];    // List of unique units found
+    let academicYear = '';
 
     // Drag and Drop Events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -294,7 +333,7 @@
         };
     }
 
-    // New Parsing Logic (Just extracts data, doesn't aggregate yet)
+    // New Parsing Logic
     function parseData(csvText) {
         const lines = csvText.split(/\r?\n/);
         if (lines.length < 2) throw new Error('El archivo está vacío o no tiene cabecera');
@@ -302,16 +341,20 @@
         const headers = parseCSVLine(lines[0]);
         const idxUnidad = headers.indexOf('UNIDAD');
         const idxNia = headers.indexOf('NIA');
-        const idxNota = headers.indexOf('NOTA1EV');
+        const idxNota1 = headers.indexOf('NOTA1EV');
+        const idxNota2 = headers.indexOf('NOTA2EV');
+        const idxNotaOrd = headers.indexOf('NOTAORD');
         const idxEstado = headers.indexOf('ESTADO');
         const idxMateria = headers.indexOf('MATERIA_GENERAL');
+        const idxAnno = headers.indexOf('C_ANNO');
 
-        if (idxUnidad === -1 || idxNia === -1 || idxNota === -1) {
+        if (idxUnidad === -1 || idxNia === -1 || idxNota1 === -1) {
             throw new Error('Columnas requeridas no encontradas (UNIDAD, NIA, NOTA1EV)');
         }
 
         globalStudents = {};
         const unitsSet = new Set();
+        academicYear = '';
 
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -321,9 +364,10 @@
 
             const nia = cols[idxNia];
             const unidad = cols[idxUnidad];
-            const notaStr = cols[idxNota];
             const estado = idxEstado !== -1 ? cols[idxEstado] : 'Matriculada';
             const materia = idxMateria !== -1 ? cols[idxMateria] : '';
+            
+            if (!academicYear && idxAnno !== -1) academicYear = cols[idxAnno];
 
             if (estado !== 'Matriculada') continue;
 
@@ -332,7 +376,9 @@
             if (!globalStudents[nia]) {
                 globalStudents[nia] = {
                     unidad: unidad,
-                    failures: 0,
+                    failures1ev: 0,
+                    failures2ev: 0,
+                    failuresOrd: 0,
                     subjects: new Set()
                 };
             }
@@ -340,10 +386,15 @@
             if (materia && globalStudents[nia].subjects.has(materia)) continue;
             if (materia) globalStudents[nia].subjects.add(materia);
 
-            const nota = parseFloat(notaStr.replace(',', '.'));
-            if (!isNaN(nota) && nota < 5) {
-                globalStudents[nia].failures++;
-            }
+            // Analysis for each evaluation
+            const processNota = (val) => {
+                const n = parseFloat(val.replace(',', '.'));
+                return (!isNaN(n) && n < 5);
+            };
+
+            if (processNota(cols[idxNota1])) globalStudents[nia].failures1ev++;
+            if (idxNota2 !== -1 && processNota(cols[idxNota2])) globalStudents[nia].failures2ev++;
+            if (idxNotaOrd !== -1 && processNota(cols[idxNotaOrd])) globalStudents[nia].failuresOrd++;
         }
 
         globalUnits = Array.from(unitsSet).sort();
@@ -394,15 +445,21 @@
             mapping[input.dataset.original] = input.value.trim() || input.dataset.original;
         });
 
-        const stats = analyzeGradesWithMapping(mapping);
-        renderTable(stats);
+        const stats1ev = analyzeGradesWithMapping(mapping, 'failures1ev');
+        const stats2ev = analyzeGradesWithMapping(mapping, 'failures2ev');
+        const statsOrd = analyzeGradesWithMapping(mapping, 'failuresOrd');
+        
+        renderTable('table-1ev', stats1ev);
+        renderTable('table-2ev', stats2ev);
+        renderTable('table-ord', statsOrd);
+        
+        if (academicYear) yearTitle.innerText = `Resultados - Año ${academicYear}`;
         
         groupingContainer.style.display = 'none';
         tableContainer.style.display = 'block';
     }
 
-    function analyzeGradesWithMapping(unitMapping) {
-        // Aggregation per Group (using mapping)
+    function analyzeGradesWithMapping(unitMapping, failureKey) {
         const groups = {}; 
 
         Object.values(globalStudents).forEach(student => {
@@ -415,10 +472,11 @@
 
             groups[mappedGroup].total++;
 
-            if (student.failures === 0) groups[mappedGroup].pass++;
-            else if (student.failures === 1) groups[mappedGroup].f1++;
-            else if (student.failures === 2) groups[mappedGroup].f2++;
-            else if (student.failures === 3) groups[mappedGroup].f3++;
+            const f = student[failureKey];
+            if (f === 0) groups[mappedGroup].pass++;
+            else if (f === 1) groups[mappedGroup].f1++;
+            else if (f === 2) groups[mappedGroup].f2++;
+            else if (f === 3) groups[mappedGroup].f3++;
             else groups[mappedGroup].f4p++;
         });
 
@@ -430,23 +488,16 @@
 
     // CSV Parsing Logic
     function parseCSVLine(line) {
-        // Regex to split by comma, ignoring commas inside double quotes
-        // Matches: "," followed by even number of quotes until end of string
         const regex = /,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/; 
-        return line.split(regex).map(field => {
-            // Remove surrounding quotes if present
-            return field.trim().replace(/^"|"$/g, '');
-        });
+        return line.split(regex).map(field => field.trim().replace(/^"|"$/g, ''));
     }
 
-    function renderTable(stats) {
-        tableBody.innerHTML = '';
+    function renderTable(tableId, stats) {
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        tbody.innerHTML = '';
         
         stats.forEach(grp => {
             const row = document.createElement('tr');
-            
-            // Calculate percentages for tooltip or clarity? Just counts for now as requested.
-            
             row.innerHTML = `
                 <td><strong>${grp.name}</strong></td>
                 <td>${grp.total}</td>
@@ -456,7 +507,7 @@
                 <td class="bad">${grp.f3}</td>
                 <td class="bad" style="font-weight:bold">${grp.f4p}</td>
             `;
-            tableBody.appendChild(row);
+            tbody.appendChild(row);
         });
     }
 </script>
